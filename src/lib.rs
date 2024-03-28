@@ -1,6 +1,6 @@
 use nom::{
     branch::alt,
-    bytes::complete::{escaped, is_not, tag, take_while, take_while1},
+    bytes::complete::{escaped, is_not, tag, take_till1, take_until, take_while, take_while1},
     character::complete::{alpha1, char, one_of},
     combinator::{cut, map, opt, value},
     error::{context, ContextError, ParseError},
@@ -11,13 +11,13 @@ use nom::{
 use std::str;
 use std::{collections::HashMap, ops::Deref};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Tag {
     value: String,
     attributes: HashMap<String, String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Xml {
     Element(Tag, Option<Vec<Xml>>),
     Text(String),
@@ -27,12 +27,19 @@ fn whitespace<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a st
     take_while(move |c| " \t\r\n".contains(c))(i)
 }
 
+fn xml_key<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+    take_while1(|c: char| c.is_alphanumeric() || "_-".contains(c))(i)
+}
+
 fn xml_text<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-    escaped(
-        take_while1(|c: char| c.is_alphanumeric() || " \t\n\r,.!?;:'\"()[]{}/-".contains(c)),
-        '\\',
-        one_of(r#""n\"#),
-    )(i)
+    map(take_till1(|c: char| "&<>".contains(c)), |r: &'a str| {
+        r.trim()
+    })(i)
+    // escaped(
+    //     take_while1(|c: char| c.is_alphanumeric() || " \t\n\r,.!?;:'\"()[]{}/-_".contains(c)),
+    //     '\\',
+    //     one_of(r#""n\"#),
+    // )(i)
 }
 
 fn quote_delim<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, char, E> {
@@ -49,7 +56,7 @@ fn attribute_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
             // TODO:
             // Ideally, this should support `"` or `'` depending on the delimiter used...
             escaped(
-                take_while(|c: char| c.is_alphanumeric() || " ,.!?;:()[]{}<>/-".contains(c)),
+                take_till1(|c: char| "\'\"".contains(c)),
                 '\\',
                 one_of(r#""n\"#),
             ),
@@ -62,7 +69,7 @@ fn attribute_key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, (&'a str, &'a str), E> {
     separated_pair(
-        preceded(whitespace, alpha1),
+        preceded(whitespace, xml_key),
         cut(preceded(whitespace, char('='))),
         attribute_value,
     )
@@ -106,7 +113,7 @@ fn opening_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         tuple((
             char('<'),
             map(
-                separated_pair(alpha1, whitespace, attributes_hash),
+                separated_pair(xml_key, whitespace, attributes_hash),
                 |(value, attributes)| {
                     let value: String = value.into();
                     Tag { value, attributes }
@@ -134,7 +141,10 @@ fn element<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         map(
             terminated(
                 many0(xml_value),
-                preceded(whitespace, delimited(tag("</"), tag(my_tag.value.clone().deref()), char('>'))),
+                preceded(
+                    whitespace,
+                    delimited(tag("</"), tag(my_tag.value.clone().deref()), char('>')),
+                ),
             ),
             move |vs| {
                 Xml::Element(
@@ -161,5 +171,88 @@ pub fn xml_meta<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 pub fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, Xml, E> {
-    cut(preceded(xml_meta, delimited(opt(whitespace), element, opt(whitespace))))(i)
+    cut(preceded(
+        xml_meta,
+        delimited(opt(whitespace), element, opt(whitespace)),
+    ))(i)
+}
+
+#[cfg(test)]
+mod tests {
+    use nom::error::ErrorKind;
+
+    use super::*;
+
+    // #[test]
+//     fn parses_xml() {
+//         let data = "<catalog>
+//    <product description=\"Cardigan Sweater\" product_image=\"cardigan.jpg\">
+//       <catalog_item gender=\"Mens\">
+//          <item_number>QWZ5671</item_number>
+//          <price>39.95</price>
+//             Nice sweater
+//       </catalog_item>
+//    </product>
+// </catalog>";
+//
+//         assert_eq!(root(data).unwrap().1,
+//             (
+//                 "</catalog>",
+//                 Xml::Element(
+//                     Tag {
+//                         value: "product",
+//                         attributes: {
+//                             "description": "Cardigan Sweater",
+//                             "product_image": "cardigan.jpg",
+//                         },
+//                     },
+//                     Some(
+//                         [
+//                             Xml::Element(
+//                                 Tag {
+//                                     value: "catalog_item",
+//                                     attributes: {
+//                                         "gender": "Mens",
+//                                     },
+//                                 },
+//                                 Some(
+//                                     [
+//                                         Xml::Element(
+//                                             Tag {
+//                                                 value: "item_number",
+//                                                 attributes: {},
+//                                             },
+//                                             Some(
+//                                                 [
+//                                                     Xml::Text(
+//                                                         "QWZ5671",
+//                                                     ),
+//                                                 ],
+//                                             ),
+//                                         ),
+//                                         Xml::Element(
+//                                             Tag {
+//                                                 value: "price",
+//                                                 attributes: {},
+//                                             },
+//                                             Some(
+//                                                 [
+//                                                     Xml::Text(
+//                                                         "39.95",
+//                                                     ),
+//                                                 ],
+//                                             ),
+//                                         ),
+//                                         Xml::Text(
+//                                             "Nice sweater",
+//                                         ),
+//                                     ],
+//                                 ),
+//                             ),
+//                         ],
+//                     ),
+//                 ),
+//             ),
+//         );
+//     }
 }
