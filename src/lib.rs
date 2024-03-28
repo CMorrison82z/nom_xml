@@ -1,11 +1,10 @@
 use nom::{
     branch::alt,
-    bytes::complete::{escaped, tag, take_while, take_while1},
-    character::{complete::{alpha1, alphanumeric1 as alphanumeric, char, one_of}},
+    bytes::complete::{escaped, is_not, tag, take_while, take_while1},
+    character::complete::{alpha1, char, one_of},
     combinator::{cut, map, opt, value},
     error::{context, ContextError, ParseError},
     multi::{many0, many1, separated_list0},
-    number::complete::double,
     sequence::{delimited, preceded, separated_pair, terminated, tuple},
     IResult, Parser,
 };
@@ -149,8 +148,16 @@ fn element<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     }
 }
 
+pub fn xml_meta<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    delimited(preceded(whitespace, char('<')), is_not(">"), char('>'))(i)
+}
+
+// TODO:
+// Actually account for (use the) meta data
 pub fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, Xml, E> {
-    cut(delimited(opt(whitespace), element, opt(whitespace)))(i)
+    cut(preceded(xml_meta, delimited(opt(whitespace), element, opt(whitespace))))(i)
 }
