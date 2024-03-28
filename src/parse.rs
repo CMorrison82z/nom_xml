@@ -24,9 +24,7 @@ pub enum Xml {
 }
 
 impl Xml {
-    pub fn from_input_str<'a>(
-        i: &'a str,
-    ) -> Result<Self, nom::Err<(&str, ErrorKind)>> {
+    pub fn from_input_str<'a>(i: &'a str) -> Result<Self, nom::Err<(&str, ErrorKind)>> {
         root::<(&str, ErrorKind)>(i).map(|(_, x)| x)
     }
     // TODO:
@@ -81,7 +79,7 @@ fn attribute_key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     separated_pair(
         preceded(whitespace, xml_key),
         cut(preceded(whitespace, char('='))),
-        attribute_value,
+        cut(preceded(whitespace, attribute_value)),
     )
     .parse(i)
 }
@@ -129,10 +127,13 @@ fn opening_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
                     Tag { value, attributes }
                 },
             ),
-            alt((
-                value(true, tag("/>")),  // Detect self-closing tags
-                value(false, char('>')), // Regular tags
-            )),
+            preceded(
+                whitespace,
+                alt((
+                    value(true, tag("/>")),  // Detect self-closing tags
+                    value(false, char('>')), // Regular tags
+                )),
+            ),
         )),
         |(_, tag, is_self_closing)| (tag, is_self_closing),
     )(i)
@@ -170,10 +171,16 @@ fn element<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     }
 }
 
+pub fn doc_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    delimited(preceded(whitespace, tag("<!DOCTYPE")), is_not("?>"), char('>'))(i)
+}
+
 pub fn xml_meta<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, &'a str, E> {
-    delimited(preceded(whitespace, tag("<?")), is_not(">"), char('>'))(i)
+    delimited(preceded(whitespace, tag("<?")), is_not("?>"), tag("?>"))(i)
 }
 
 // TODO:
@@ -182,8 +189,7 @@ pub fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, Xml, E> {
     cut(preceded(
-        many0(xml_meta),
+        many0(alt((xml_meta, doc_type))),
         delimited(opt(whitespace), element, opt(whitespace)),
     ))(i)
 }
-
