@@ -171,6 +171,12 @@ fn element<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     }
 }
 
+pub fn doc_type<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+    delimited(preceded(whitespace, tag("<!DOCTYPE")), is_not("?>"), char('>'))(i)
+}
+
 pub fn xml_meta<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, &'a str, E> {
@@ -183,7 +189,7 @@ pub fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, Xml, E> {
     cut(preceded(
-        many0(xml_meta),
+        many0(alt((xml_meta, doc_type))),
         delimited(opt(whitespace), element, opt(whitespace)),
     ))(i)
 }
