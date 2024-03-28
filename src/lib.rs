@@ -121,6 +121,8 @@ fn opening_tag<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     )(i)
 }
 
+// TODO:
+// Remove all the `clone`
 fn element<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, Xml, E> {
