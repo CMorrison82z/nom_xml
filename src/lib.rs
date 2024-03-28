@@ -4,6 +4,8 @@ pub mod parse;
 mod tests {
     use std::collections::HashMap;
 
+    use nom::error::ErrorKind;
+
     use super::parse::*;
 
     #[test]
@@ -70,4 +72,105 @@ mod tests {
             ),
         );
     }
+
+    #[test]
+    fn duplicate_tags_ok() {
+        let data = "
+            <?xml version=\"1.0\"?>
+            <?xml-stylesheet href=\"prices.xsl\" type=\"text/xsl\"?>
+            <prices>
+                <price
+                    val=\"19.95\"
+                    val1=\"9.95\"
+                />
+                <price val=\"29.95\"/>
+                <price val=\"39.95\"/>
+                <price val=\"49.95\"/>
+            </prices>
+        ";
+
+
+        assert_eq!(
+            Xml::from_input_str(data).unwrap(),
+            Xml::Element(
+                Tag {
+                    value: "prices".into(),
+                    attributes: HashMap::new(),
+                },
+                Some(vec![
+                    Xml::Element(
+                        Tag {
+                            value: "price".into(),
+                            attributes: HashMap::from([("val".into(), "19.95".into()), ("val1".into(), "9.95".into())]),
+                        },
+                        None
+                    ),
+                    Xml::Element(
+                        Tag {
+                            value: "price".into(),
+                            attributes: HashMap::from([("val".into(), "29.95".into())]),
+                        },
+                        None
+                    ),
+                    Xml::Element(
+                        Tag {
+                            value: "price".into(),
+                            attributes: HashMap::from([("val".into(), "39.95".into())]),
+                        },
+                        None
+                    ),
+                    Xml::Element(
+                        Tag {
+                            value: "price".into(),
+                            attributes: HashMap::from([("val".into(), "49.95".into())]),
+                        },
+                        None
+                    ),
+                ],),
+            ),
+        );
+    }
+
+    #[test]
+    fn multi_line_attributes() {
+        let data = "
+            <?xml version=\"1.0\"?>
+            <?xml-stylesheetew href=\"prices.xsl\" type=\"text/xsl\"?>
+            <prices>
+                <price
+                    val = \"9.95\"
+                    val1 = \"19.95\"
+                />
+                <price val=\"29.95\"/>
+            </prices>
+        ";
+
+
+        assert_eq!(
+            Xml::from_input_str(data).unwrap(),
+            Xml::Element(
+                Tag {
+                    value: "prices".into(),
+                    attributes: HashMap::new(),
+                },
+                Some(vec![
+                    Xml::Element(
+                        Tag {
+                            value: "price".into(),
+                            attributes: HashMap::from([("val".into(), "9.95".into()), ("val1".into(), "19.95".into())]),
+                        },
+                        None
+                    ),
+                    Xml::Element(
+                        Tag {
+                            value: "price".into(),
+                            attributes: HashMap::from([("val".into(), "29.95".into())]),
+                        },
+                        None
+                    ),
+                ],),
+            ),
+        );
+    }
+
 }
