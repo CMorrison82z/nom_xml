@@ -163,7 +163,7 @@ fn element<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 pub fn xml_meta<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, &'a str, E> {
-    delimited(preceded(whitespace, char('<')), is_not(">"), char('>'))(i)
+    delimited(preceded(whitespace, tag("<?")), is_not(">"), char('>'))(i)
 }
 
 // TODO:
@@ -172,7 +172,7 @@ pub fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, Xml, E> {
     cut(preceded(
-        xml_meta,
+        many0(xml_meta),
         delimited(opt(whitespace), element, opt(whitespace)),
     ))(i)
 }
@@ -183,76 +183,67 @@ mod tests {
 
     use super::*;
 
-    // #[test]
-//     fn parses_xml() {
-//         let data = "<catalog>
-//    <product description=\"Cardigan Sweater\" product_image=\"cardigan.jpg\">
-//       <catalog_item gender=\"Mens\">
-//          <item_number>QWZ5671</item_number>
-//          <price>39.95</price>
-//             Nice sweater
-//       </catalog_item>
-//    </product>
-// </catalog>";
-//
-//         assert_eq!(root(data).unwrap().1,
-//             (
-//                 "</catalog>",
-//                 Xml::Element(
-//                     Tag {
-//                         value: "product",
-//                         attributes: {
-//                             "description": "Cardigan Sweater",
-//                             "product_image": "cardigan.jpg",
-//                         },
-//                     },
-//                     Some(
-//                         [
-//                             Xml::Element(
-//                                 Tag {
-//                                     value: "catalog_item",
-//                                     attributes: {
-//                                         "gender": "Mens",
-//                                     },
-//                                 },
-//                                 Some(
-//                                     [
-//                                         Xml::Element(
-//                                             Tag {
-//                                                 value: "item_number",
-//                                                 attributes: {},
-//                                             },
-//                                             Some(
-//                                                 [
-//                                                     Xml::Text(
-//                                                         "QWZ5671",
-//                                                     ),
-//                                                 ],
-//                                             ),
-//                                         ),
-//                                         Xml::Element(
-//                                             Tag {
-//                                                 value: "price",
-//                                                 attributes: {},
-//                                             },
-//                                             Some(
-//                                                 [
-//                                                     Xml::Text(
-//                                                         "39.95",
-//                                                     ),
-//                                                 ],
-//                                             ),
-//                                         ),
-//                                         Xml::Text(
-//                                             "Nice sweater",
-//                                         ),
-//                                     ],
-//                                 ),
-//                             ),
-//                         ],
-//                     ),
-//                 ),
-//             ),
-//         );
-//     }
+    #[test]
+    fn parses_xml() {
+        let data = "
+<?xml version=\"1.0\"?>
+<?xml-stylesheet href=\"catalog.xsl\" type=\"text/xsl\"?>
+            <catalog>
+   <product description=\"Cardigan Sweater\" product_image=\"cardigan.jpg\">
+      <catalog_item gender=\"Mens\">
+         <item_number>QWZ5671</item_number>
+         <price>39.95</price>
+            Nice sweater
+      </catalog_item>
+   </product>
+</catalog>";
+
+        assert_eq!(
+            root::<(&str, ErrorKind)>(data).unwrap().1,
+            Xml::Element(
+                Tag {
+                    value: "catalog".into(),
+                    attributes: HashMap::new(),
+                },
+                Some(vec![Xml::Element(
+                    Tag {
+                        value: "product".into(),
+                        attributes: HashMap::from([
+                            (
+                                String::from("description"),
+                                String::from("Cardigan Sweater")
+                            ),
+                            (String::from("product_image"), String::from("cardigan.jpg"))
+                        ]),
+                    },
+                    Some(vec![Xml::Element(
+                        Tag {
+                            value: "catalog_item".into(),
+                            attributes: HashMap::from([(
+                                String::from("gender"),
+                                String::from("Mens")
+                            ),]),
+                        },
+                        Some(vec![
+                            Xml::Element(
+                                Tag {
+                                    value: "item_number".into(),
+                                    attributes: HashMap::new(),
+                                },
+                                Some(vec![Xml::Text("QWZ5671".into(),),],),
+                            ),
+                            Xml::Element(
+                                Tag {
+                                    value: "price".into(),
+                                    attributes: HashMap::new(),
+                                },
+                                Some(vec![Xml::Text("39.95".into(),),],),
+                            ),
+                            Xml::Text("Nice sweater".into(),),
+                        ],),
+                    ),],),
+                ),],),
+            ),
+        );
+    }
 }
