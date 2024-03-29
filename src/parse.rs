@@ -11,25 +11,7 @@ use nom::{
 use std::str;
 use std::{collections::HashMap, ops::Deref};
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Tag {
-    pub value: String,
-    pub attributes: HashMap<String, String>,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Xml {
-    Element(Tag, Option<Vec<Xml>>),
-    Text(String),
-}
-
-impl Xml {
-    pub fn from_input_str<'a>(i: &'a str) -> Result<Self, nom::Err<(&str, ErrorKind)>> {
-        root::<(&str, ErrorKind)>(i).map(|(_, x)| x)
-    }
-    // TODO:
-    // from_bytes, from_file, etc.
-}
+use crate::types::*;
 
 fn whitespace<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     take_while(move |c| " \t\r\n".contains(c))(i)
