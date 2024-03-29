@@ -18,6 +18,21 @@ impl Xml {
     pub fn from_input_str<'a>(i: &'a str) -> Result<Self, nom::Err<(&str, ErrorKind)>> {
         crate::parse::root::<(&str, ErrorKind)>(i).map(|(_, x)| x)
     }
+
+    pub fn is_element(&self) -> bool {
+        match self {
+            Xml::Element(_, _) => true,
+            Xml::Text(_) => false,
+        }
+    }
+
+    pub fn tag_has_name(&self, name: &str) -> bool {
+        match self {
+            Xml::Element(t, _) if t.value == name => true,
+            _ => false
+        }
+    }
+
     // TODO:
     // from_bytes, from_file, etc.
 }
