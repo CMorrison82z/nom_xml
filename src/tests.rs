@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::parse::*;
+use super::{parse::*, types::*};
 
 #[test]
 fn parses_xml() {
