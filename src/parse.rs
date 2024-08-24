@@ -25,11 +25,6 @@ fn xml_text<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str,
     map(take_till1(|c: char| "&<>".contains(c)), |r: &'a str| {
         r.trim()
     })(i)
-    // escaped(
-    //     take_while1(|c: char| c.is_alphanumeric() || " \t\n\r,.!?;:'\"()[]{}/-_".contains(c)),
-    //     '\\',
-    //     one_of(r#""n\"#),
-    // )(i)
 }
 
 fn quote_delim<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, char, E> {
