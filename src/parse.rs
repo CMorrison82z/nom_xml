@@ -3,7 +3,7 @@ use nom::{
     bytes::complete::{escaped, is_not, tag, take_till1, take_while, take_while1},
     character::complete::{char, one_of},
     combinator::{cut, map, opt, value},
-    error::{context, ContextError, ErrorKind, ParseError},
+    error::{context, ContextError, ParseError},
     multi::{many0, many1, separated_list0},
     sequence::{delimited, preceded, separated_pair, terminated, tuple},
     IResult, Parser,

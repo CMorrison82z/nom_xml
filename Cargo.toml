@@ -5,6 +5,8 @@ edition = "2021"
 authors = ["Chris Morrison"]
 license = "GPL-3.0"
 rust-version = "1.71"
+homepage = "https://github.com/CMorrison82z/nom_xml"
+repository = "https://github.com/CMorrison82z/nom_xml"
 
 [dependencies]
 nom = "7.1.3"
