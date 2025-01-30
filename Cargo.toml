@@ -3,6 +3,7 @@ name = "nom_xml"
 version = "0.1.0"
 edition = "2021"
 authors = ["Chris Morrison"]
+description = "A XML parser with nom"
 license = "GPL-3.0"
 rust-version = "1.71"
 homepage = "https://github.com/CMorrison82z/nom_xml"
