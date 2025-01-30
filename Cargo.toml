@@ -1,5 +1,5 @@
 [package]
-name = "nom_xml"
+name = "xml_nom_parse"
 version = "0.1.0"
 edition = "2021"
 authors = ["Chris Morrison"]
