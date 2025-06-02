@@ -2,20 +2,20 @@ use std::collections::HashMap;
 
 use nom::error::ErrorKind;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tag {
     pub value: String,
     pub attributes: HashMap<String, String>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Xml {
     Element(Tag, Option<Vec<Xml>>),
     Text(String),
 }
 
 impl Xml {
-    pub fn from_input_str<'a>(i: &'a str) -> Result<Self, nom::Err<(&str, ErrorKind)>> {
+    pub fn from_input_str<'a>(i: &'a str) -> Result<Self, nom::Err<(&'a str, ErrorKind)>> {
         crate::parse::root::<(&str, ErrorKind)>(i).map(|(_, x)| x)
     }
 
@@ -29,7 +29,7 @@ impl Xml {
     pub fn tag_has_name(&self, name: &str) -> bool {
         match self {
             Xml::Element(t, _) if t.value == name => true,
-            _ => false
+            _ => false,
         }
     }
 
