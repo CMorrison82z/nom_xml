@@ -15,6 +15,10 @@ pub enum Xml {
 }
 
 impl Xml {
+    pub fn from_tag(t: Tag) -> Self {
+        Xml::Element(t, None)
+    }
+
     pub fn from_input_str<'a>(i: &'a str) -> Result<Self, nom::Err<(&'a str, ErrorKind)>> {
         crate::parse::root::<(&str, ErrorKind)>(i).map(|(_, x)| x)
     }
