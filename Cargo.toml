@@ -1,6 +1,6 @@
 [package]
 name = "xml_nom_parse"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Chris Morrison"]
 description = "A XML parser with nom"
