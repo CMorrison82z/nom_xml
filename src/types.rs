@@ -32,7 +32,7 @@ impl Xml {
 
     pub fn tag_has_name(&self, name: &str) -> bool {
         match self {
-            Xml::Element(t, _) if t.value == name => true,
+            Xml::Element(t, _) => t.value == name,
             _ => false,
         }
     }
@@ -40,3 +40,46 @@ impl Xml {
     // TODO:
     // from_bytes, from_file, etc.
 }
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TagRef<'a> {
+    pub value: &'a str,
+    pub attributes: HashMap<&'a str, &'a str>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum XmlRef<'a> {
+    Element(TagRef<'a>, Option<Vec<XmlRef<'a>>>),
+    Text(&'a str),
+}
+
+impl<'a> XmlRef<'a> {
+    pub fn from_input_str(i: &'a str) -> Result<Self, nom::Err<(&'a str, ErrorKind)>> {
+        crate::parse::root_ref::<(&str, ErrorKind)>(i).map(|(_, x)| x)
+    }
+
+    pub fn from_tag(t: TagRef<'a>) -> Self {
+        XmlRef::Element(t, None)
+    }
+
+    pub fn is_element(&self) -> bool {
+        match self {
+            XmlRef::Element(_, _) => true,
+            XmlRef::Text(_) => false,
+        }
+    }
+
+    pub fn tag_has_name(&self, name: &str) -> bool {
+        match self {
+            XmlRef::Element(t, _) => t.value == name,
+            _ => false,
+        }
+    }
+}
+
+// TODO:
+// Better name, and also review the idea.
+// pub struct XmlRefHeld<'a> {
+//     pub buffer: String,
+//     pub xml: XmlRef<'a>
+// }
