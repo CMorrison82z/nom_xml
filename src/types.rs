@@ -1,4 +1,7 @@
+#[cfg(feature = "secure")]
 use std::collections::HashMap;
+#[cfg(feature = "fast")]
+use foldhash::HashMap;
 
 use nom::error::ErrorKind;
 

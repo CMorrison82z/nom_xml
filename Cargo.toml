@@ -12,9 +12,15 @@ readme = "README.md"
 
 [dependencies]
 nom = "7.1.3"
+foldhash = {version = "0.2", optional = true}
 
 [dev-dependencies]
 criterion = "0.3"
+
+[features]
+default = ["fast"]
+fast = ["dep:foldhash"]
+secure = []
 
 [[bench]]
 name = "big_tmx_bench"

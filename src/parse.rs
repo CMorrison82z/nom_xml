@@ -9,7 +9,11 @@ use nom::{
     IResult, Parser,
 };
 use std::str;
-use std::{collections::HashMap, ops::Deref};
+use std::ops::Deref;
+#[cfg(feature = "secure")]
+use std::collections::HashMap;
+#[cfg(feature = "fast")]
+use foldhash::HashMap;
 
 use crate::types::*;
 
