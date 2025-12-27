@@ -1,6 +1,6 @@
 use nom::{
     branch::alt,
-    bytes::complete::{escaped, is_not, tag, take_till1, take_while, take_while1},
+    bytes::complete::{escaped, is_not, tag, take_till1, take_till, take_while, take_while1},
     character::complete::{char, one_of, multispace0},
     combinator::{cut, map, opt, value},
     error::{context, ContextError, ParseError},
@@ -9,7 +9,11 @@ use nom::{
     IResult, Parser,
 };
 use std::str;
-use std::{collections::HashMap, ops::Deref};
+use std::ops::Deref;
+#[cfg(feature = "secure")]
+use std::collections::HashMap;
+#[cfg(feature = "fast")]
+use foldhash::HashMap;
 
 use crate::types::*;
 
@@ -37,7 +41,7 @@ fn attribute_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
             // TODO:
             // Ideally, this should support `"` or `'` depending on the delimiter used...
             escaped(
-                take_till1(|c: char| "\'\"".contains(c)),
+                take_till(|c: char| "\'\"".contains(c)),
                 '\\',
                 one_of(r#""n\"#),
             ),

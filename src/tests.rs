@@ -1,4 +1,7 @@
+#[cfg(feature = "secure")]
 use std::collections::HashMap;
+#[cfg(feature = "fast")]
+use foldhash::{HashMap, HashMapExt};
 
 use crate::{serialize::*, types::*};
 
@@ -28,20 +31,20 @@ fn parses_xml() {
             Some(vec![Xml::Element(
                 Tag {
                     value: "product".into(),
-                    attributes: HashMap::from([
+                    attributes: [
                         (
                             String::from("description"),
                             String::from("Cardigan Sweater")
                         ),
                         (String::from("product_image"), String::from("cardigan.jpg"))
-                    ]),
+                    ].into_iter().collect(),
                 },
                 Some(vec![Xml::Element(
                     Tag {
                         value: "catalog_item".into(),
-                        attributes: HashMap::from(
-                            [(String::from("gender"), String::from("Mens")),]
-                        ),
+                        attributes: 
+                            [(String::from("gender"), String::from("Mens")),
+                        ].into_iter().collect(),
                     },
                     Some(vec![
                         Xml::Element(
@@ -93,31 +96,31 @@ fn duplicate_tags_ok() {
                 Xml::Element(
                     Tag {
                         value: "price".into(),
-                        attributes: HashMap::from([
+                        attributes: [
                             ("val".into(), "19.95".into()),
                             ("val1".into(), "9.95".into())
-                        ]),
+                        ].into_iter().collect(),
                     },
                     None
                 ),
                 Xml::Element(
                     Tag {
                         value: "price".into(),
-                        attributes: HashMap::from([("val".into(), "29.95".into())]),
+                        attributes: [("val".into(), "29.95".into())].into_iter().collect(),
                     },
                     None
                 ),
                 Xml::Element(
                     Tag {
                         value: "price".into(),
-                        attributes: HashMap::from([("val".into(), "39.95".into())]),
+                        attributes: [("val".into(), "39.95".into())].into_iter().collect(),
                     },
                     None
                 ),
                 Xml::Element(
                     Tag {
                         value: "price".into(),
-                        attributes: HashMap::from([("val".into(), "49.95".into())]),
+                        attributes: [("val".into(), "49.95".into())].into_iter().collect(),
                     },
                     None
                 ),
@@ -151,17 +154,17 @@ fn multi_line_attributes() {
                 Xml::Element(
                     Tag {
                         value: "price".into(),
-                        attributes: HashMap::from([
+                        attributes: [
                             ("val".into(), "9.95".into()),
                             ("val1".into(), "19.95".into())
-                        ]),
+                        ].into_iter().collect(),
                     },
                     None
                 ),
                 Xml::Element(
                     Tag {
                         value: "price".into(),
-                        attributes: HashMap::from([("val".into(), "29.95".into())]),
+                        attributes: [("val".into(), "29.95".into())].into_iter().collect(),
                     },
                     None
                 ),
@@ -199,20 +202,20 @@ fn serialize_xml() {
             Some(vec![Xml::Element(
                 Tag {
                     value: "product".into(),
-                    attributes: HashMap::from([
+                    attributes: [
                         (
                             String::from("description"),
                             String::from("Cardigan Sweater")
                         ),
                         (String::from("product_image"), String::from("cardigan.jpg"))
-                    ]),
+                    ].into_iter().collect(),
                 },
                 Some(vec![Xml::Element(
                     Tag {
                         value: "catalog_item".into(),
-                        attributes: HashMap::from(
-                            [(String::from("gender"), String::from("Mens")),]
-                        ),
+                        attributes: 
+                            [(String::from("gender"), String::from("Mens")),
+                        ].into_iter().collect(),
                     },
                     Some(vec![
                         Xml::Element(
@@ -234,5 +237,57 @@ fn serialize_xml() {
                 ),],),
             ),],),
         )),
+    );
+}
+
+#[test]
+fn parses_xml_ref() {
+    let data = String::from_utf8(std::fs::read("map.tmx").unwrap()).unwrap();
+
+    assert_eq!(
+        Xml::from_input_str(&data).unwrap(),
+        Xml::Element(
+            Tag {
+                value: "catalog".into(),
+                attributes: HashMap::new(),
+            },
+            Some(vec![Xml::Element(
+                Tag {
+                    value: "product".into(),
+                    attributes: [
+                        (
+                            String::from("description"),
+                            String::from("Cardigan Sweater")
+                        ),
+                        (String::from("product_image"), String::from("cardigan.jpg"))
+                    ].into_iter().collect(),
+                },
+                Some(vec![Xml::Element(
+                    Tag {
+                        value: "catalog_item".into(),
+                        attributes: 
+                            [(String::from("gender"), String::from("Mens")),
+                        ].into_iter().collect(),
+                    },
+                    Some(vec![
+                        Xml::Element(
+                            Tag {
+                                value: "item_number".into(),
+                                attributes: HashMap::new(),
+                            },
+                            Some(vec![Xml::Text("QWZ5671".into(),),],),
+                        ),
+                        Xml::Element(
+                            Tag {
+                                value: "price".into(),
+                                attributes: HashMap::new(),
+                            },
+                            Some(vec![Xml::Text("39.95".into(),),],),
+                        ),
+                        Xml::Text("Nice sweater".into(),),
+                    ],),
+                ),],),
+            ),],),
+        ),
     );
 }
